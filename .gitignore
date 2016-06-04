@@ -1,0 +1,11 @@
+*.swo
+*.swp
+.DS_Store
+Makefile
+Session.vim
+/build
+node_modules
+Makefile
+Session.vim
+/etc/*.sh
+/assets/js
