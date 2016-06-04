@@ -6,6 +6,19 @@ This application is a web client phone written in javascript.
 It's using websocket and a bit of http to communicate with an instance of pohny-server.
 Phone client manage contacts, conversation (via sms), and calling features.
 
+**Some screenshots**:
+
+> Add Contact: http://puu.sh/pg4fj/bf55d33d7b.png
+
+> List Contact: http://puu.sh/pg4hG/d488e118d0.png
+
+> List Conversations: http://puu.sh/pg4xR/da35307e4d.png
+
+> Chat: http://puu.sh/pg59y/2fdd4a3005.png
+
+> Phone: http://puu.sh/pg4JL/b8b916eeba.png
+
+
 
 Requirements
 ============

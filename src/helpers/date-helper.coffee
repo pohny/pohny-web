@@ -61,7 +61,7 @@ define (require) ->
 
 
     @_getMinDiff: (d1, d2) ->
-      return (d1.getHours() - d2.getHours()) * 60 + d1.getMinutes() - d2.getMinutes()
+      return Math.floor (d1.getTime() - d2.getTime()) / 60000
 
     @_getSecDiff: (d1, d2) ->
       return Math.floor (d1.getTime() - d2.getTime()) / 1000
