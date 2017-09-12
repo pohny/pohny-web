@@ -78,7 +78,7 @@ define (require) ->
     serializeData: () ->
       data = super()
       data.name = @options.name
-      data.phone = @options.phone
+      data.id = @options.id
       return data
 
     #childEvents:
@@ -98,7 +98,7 @@ define (require) ->
 
         #mark as read
         if ctx.conversation && ctx.conversation.get('unread') > 0
-          ctx.app.sendMessage('conversations.read', [ctx.conversation.get('phone')])
+          ctx.app.sendMessage('conversations.read', [ctx.conversation.id])
           ctx.conversation.set('unread', 0, {silent: true})
         ctx.app.incrConversation()
 
@@ -128,6 +128,11 @@ define (require) ->
           ctx.messages.add message
           el.val("")
 
+    getViewContact: (ctx) ->
+      return (e) ->
+        phone = ctx.layout.$el.find(e.currentTarget).find('.contact-phone').html()
+        ctx.app.router.navigate("contact/" + phone , true)
+
     renderMessageForm: () ->
       @view = new MessageForm()
       @layout.getRegion('content').show(@view, {})
@@ -140,7 +145,7 @@ define (require) ->
 
       @messages = @conversation.get('messages')
       if !@messages
-        @messages = new MessageCollection([], {id: @conversation.get('phone') })
+        @messages = new MessageCollection([], {id: @conversation.id })
         @messages.bindEvents(@app)
         @conversation.set('messages', @messages)
       @messages.comparator = (model) -> return - model.get 'at'
@@ -149,10 +154,11 @@ define (require) ->
         events:
           'click .back': @getBackToList(@)
           'click .call': @getCallContact(@)
+          'click .view-contact': @getViewContact(@)
           #'click .send': @getSaveMessage(@)
           'submit form': @getSaveMessage(@)
-        name: @conversation.get('name') || 'NoName'
-        phone: @conversation.get('phone')
+        name: @conversation.get('name') || 'Add contact'
+        id: @conversation.id
       })
       @layout.render()
       @app.show(@layout, () => @renderMessageList() )

@@ -7,7 +7,7 @@ define (require) ->
   exports = {}
 
   class ConversationModel extends Backbone.Model
-    idAttribute : 'phone'
+    #idAttribute : 'phone'
 
   class ConversationView extends Marionette.ItemView
     template: '#conversation-template'
@@ -19,8 +19,8 @@ define (require) ->
     serializeData: () ->
       data = super()
       data = _.extend data, {
-        phone: data.phone,
-        name: data.name || data.phone,
+        id: data.id,
+        name: data.name || data.id,
         last_msg: data.messages.at(0).get('body'),
         at: data.messages.at(0).get('at'),
         unread: data.unread
@@ -83,7 +83,8 @@ define (require) ->
         ctx.layout.list.currentView._onCollectionRemove(conversation)
         conversation.get('messages').reset()
         fnName = if ctx.layout.list.currentView.children.length > 0 then 'show' else 'hide'
-        @layout.$el.find('#menu2')[fnName]()
+        #@layout.$el.find('#menu2')[fnName]()
+        $('#menu2')[fnName]()
 
     render: () ->
       @conversations.comparator = (model) ->
@@ -97,7 +98,7 @@ define (require) ->
           'dragover .trash': (e) -> e.preventDefault()
           'dragenter .trash': (e) -> e.preventDefault(); e.stopPropagation(); $(e.target).addClass('dragging')
           'dragleave .trash': (e) -> e.preventDefault(); e.stopPropagation(); $(e.target).removeClass('dragging')
-          'dragstart .contact': (e) ->
+          'dragstart .conversation': (e) ->
             e.originalEvent.dataTransfer.setData("text", $(e.currentTarget).find('.contact-phone').html())
       })
       @layout.render()

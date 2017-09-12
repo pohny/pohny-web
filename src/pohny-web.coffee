@@ -111,9 +111,8 @@ define (require) ->
 
       for k, v of conversationData
         if typeof v.messages == 'string' then v.messages = JSON.parse v.messages
-        v.messages = new Messages.Collection(v.messages, { id: v.phone})
+        v.messages = new Messages.Collection(v.messages, { id: v.id})
         v.messages.bindEvents(App)
-        if !v.name && v.name.length == 0 then v.name = "unamed"
 
       App.dataSource = {
         #conversations: new Backbone.Collection(_.values(conversationData))
@@ -137,6 +136,13 @@ define (require) ->
         routes: {
           "contacts/new": () ->
             routes.contacts.render(true)
+
+          "contact/:id": (id) ->
+            conversation = App.dataSource.conversations.get(id)
+            if conversation
+              App.current = routes.contacts
+              App.current.render(conversation)
+            else App.router.navigate '404'
 
           "conversation/:id": (id) ->
             #console.log "Selecting conversation with " + id

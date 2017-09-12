@@ -4,11 +4,11 @@ define (require) ->
   Val = require 'helpers/validate'
 
   class ContactModel extends Backbone.Model
-    idAttribute : 'phone'
+    #idAttribute : 'phone'
 
     @schema:
       # TODO: this phone number regex below accept spaces, check if it's a problem later.
-      phone: Val.String().required().regex(/^\+(?:[0-9] ?){6,14}[0-9]$/) #phone number
+      id: Val.String().required().regex(/^\+(?:[0-9] ?){6,14}[0-9]$/) #phone number
       name: Val.String().required().regex(/^[a-zA-Z0-9_]*$/).max(100)
       note: Val.String().max(1000)
 
@@ -32,6 +32,13 @@ define (require) ->
     tagName: 'li'
     className: 'pure-menu-item'
 
+    serializeData: () ->
+      data = super()
+      data = _.extend data, {
+        id: data.id,
+        name: data.name || "Unknown pohny"
+      }
+      return data
 
   class ContactCollectionView extends Marionette.CollectionView
     childView: ContactView
@@ -47,14 +54,14 @@ define (require) ->
       regExp = new RegExp('(' + @filterExp.trim() + ')', 'i')
       models2 = {}
       for index, model1 of models1
-        name = model1.get('name').toLowerCase().trim()
-        phone = model1.get('phone').trim()
+        name = (model1.get('name') || "").toLowerCase().trim()
+        phone = model1.id.trim()
         if name.indexOf(filterExp) > -1 || phone.indexOf(filterExp) > -1
           model2 = model1
           if filterExp.length > 0
             model2 = new ContactModel({
-              name: model1.get('name').replace(regExp, '<p class="highlight">$1</p>')
-              phone: model1.get('phone').replace(regExp, '<p class="highlight">$1</p>')
+              name: (model1.get('name') || "").replace(regExp, '<p class="highlight">$1</p>')
+              id: model1.id.replace(regExp, '<p class="highlight">$1</p>')
             })
           models2[index] = model2
       return models2
@@ -82,7 +89,12 @@ define (require) ->
     renderContactList: () ->
       #ContactCollectionView.prototype.childView = ContactView
       @view = new ContactCollectionView({ collection: @contacts })
-      if @contacts.models.length < 1 then @renderContactForm()
+      #contactCount = 0
+      #for index, model of @contacts.models then if model.get('name') then contactCount++
+      #if contactCount < 1
+      if @contacts.models.length < 1
+        @renderContactForm()
+        $('#contact-notifier').html('<br/>No contact registered, please add a contact:<br/>')
       else @layout.$el.find('#menu2').show()
       @layout.getRegion('list').show(@view, {})
 
@@ -124,7 +136,7 @@ define (require) ->
       return (e) ->
         contact = new ContactModel({
           name:  $(e.target).find('input[name=name]').val()
-          phone: $(e.target).find('input[name=phone]').val()
+          id: $(e.target).find('input[name=phone]').val()
           note: $(e.target).find('textarea[name=note]').val()
         })
         errors = contact.validate()
@@ -156,7 +168,7 @@ define (require) ->
         ctx.renderContactForm()
         contact = ctx.contacts.get e.originalEvent.dataTransfer.getData("text")
         ctx.view.$el.find('input[name=name]').val(contact.get("name"))
-        ctx.view.$el.find('input[name=phone]').val(contact.get("phone")).attr("disabled", true)
+        ctx.view.$el.find('input[name=phone]').val(contact.id).attr("disabled", true)
         ctx.view.$el.find('textarea[name=note]').val(contact.get("note"))
 
     getCallContact: (ctx) ->
@@ -171,10 +183,17 @@ define (require) ->
         e.preventDefault()
         ctx.contacts.remove e.originalEvent.dataTransfer.getData("text")
 
+        contactCount = 0
+        for index, model of ctx.contacts.models then if model.get('name') then contactCount++
+        #if @contacts.models.length < 1 then @renderContactForm()
+        if contactCount < 1
+          ctx.renderContactForm()
+          $('#contact-notifier').html('<br/>No contact registered, please add a contact:<br/>')
+
     getDisplayContactList: (ctx) ->
       return (e) -> ctx.app.router.navigate("contacts", true)
 
-    render: (displayForm = false) ->
+    render: (@conversation = false) ->
 
       @contacts.comparator = 'name'
       @contacts.sort()
@@ -198,9 +217,15 @@ define (require) ->
             e.originalEvent.dataTransfer.setData("text", $(e.currentTarget).find('.contact-phone').html())
       })
       @layout.render()
-      renderMethod = if displayForm then 'renderContactForm' else 'renderContactList'
+      renderMethod = if @conversation then 'renderContactForm' else 'renderContactList'
       @app.show(@layout, () => @[renderMethod]() )
-      if displayForm then $('input[name=name]').focus() else $('#search').focus()
+      if @conversation
+        $('input[name=name]').focus()
+        if @conversation.get
+          @view.$el.find('input[name=name]').val(@conversation.get("name"))
+          @view.$el.find('input[name=phone]').val(@conversation.id).attr("disabled", true)
+          @view.$el.find('textarea[name=note]').val(@conversation.get("note"))
+      else $('#search').focus()
       #$('.edit').show()
 
   exports = {}
