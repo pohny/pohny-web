@@ -88,8 +88,20 @@ define (require) ->
             from = data.params[0]
             message = data.params[1]
             conversation = App.dataSource.conversations.get(from)
-            conversation.set('unread', conversation.get('unread') + 1, {silent: true} )
-            conversation.get('messages').add message
+            if !conversation
+              #conversation = new Conversations.ConversationModel({
+              conversation = new Backbone.Model({
+                name: from
+                id: from
+                note: ''
+                unread: 1
+              })
+              messages = new Messages.Collection([message], {id: from })
+              conversation.set 'messages', messages
+              App.dataSource.conversations.add conversation
+            else
+              conversation.set('unread', conversation.get('unread') + 1, {silent: true} )
+              conversation.get('messages').add message
             #notifySound.currentTime = 0
             notifySound.play()
             App.incrConversation()
