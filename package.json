@@ -1,6 +1,6 @@
 {
   "name": "pohny-web",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "scripts": {
     "build": "coffee --compile --output build src",
     "watch": "coffee --compile --watch --output build src"
