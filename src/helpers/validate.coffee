@@ -9,6 +9,7 @@ define (require) ->
   class StringValidator extends Validator
 
     constructor: () ->
+      super()
       @tests = [['string']]
 
     required: () -> @tests.push(['required']); @
