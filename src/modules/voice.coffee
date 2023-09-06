@@ -6,7 +6,6 @@ define (require) ->
   _ = require 'underscore'
   mic = require 'helpers/mic'
 
-  require 'twilio' # import Twilio
   exports = {}
 
   class CalledView extends Marionette.ItemView
@@ -29,37 +28,42 @@ define (require) ->
     id: 'voice-content'
 
   class VoiceManager
+
     constructor: (@app, @dataSource) ->
-      Twilio.Device.ready (device) -> trace "Client is ready"
-      Twilio.Device.error (error) -> trace "Error", error
-      Twilio.Device.disconnect (conn) =>
-        trace 'call Ended'
-        Twilio.Device.disconnectAll()
-        @app.conn = null
+      device = @app.resources.device
+      device.on('registered', () -> trace "Client is registered")
+      device.on('error', () ->
+        trace "Error", error
         @updateOnGoingCall('null')
-      Twilio.Device.connect (conn) =>
-        @app.conn = conn
-        trace 'calling', conn.message.PhoneNumber
-        @updateOnGoingCall(conn.message.PhoneNumber)
-        #conn.sendDigits("0")
-      Twilio.Device.incoming (conn) =>
+      )
+
+      device.on('unregistered', () =>
+        trace 'call Ended'
+        device.disconnectAll()
+        @app.myCall = null
+        @updateOnGoingCall('null')
+      )
+
+      device.on('incoming', (call) =>
         trace 'call coming in!'
-        @app.conn = conn
+        @app.myCall = call
         view = new CalledView( {
-          model: new Backbone.Model({ from: conn.parameters.From})
+          model: new Backbone.Model({ from: call.parameters.From})
           events:
             'click #accept-call': @getAcceptCall(@)
             'click #reject-call': @getRejectCall(@)
         })
         view.render()
         @app.resources.popup.open(view)
-      Twilio.Device.setup(@dataSource.user.capabilityToken)
+      )
+      device.register()
+
       trace 'phone setting up ...', @dataSource.user.capabilityToken
 
 
     # TODO: this function and CallingView are global to the app, maybe move them in app scope ?
     updateOnGoingCall: (target) ->
-      if @app.conn
+      if @app.myCall
         view = new CallingView({
           model: new Backbone.Model({target: target})
           events:
@@ -74,18 +78,18 @@ define (require) ->
     getAcceptCall: (ctx) ->
       return () ->
         # for some reason using mic below prevent connection to the call
-        #mic(ctx.app.conn.mediaStream.stream)
-        ctx.app.conn.accept()
+        #mic(ctx.app.myCall.mediaStream.stream)
+        ctx.app.myCall.accept()
         ctx.app.resources.popup.close()
-        ctx.updateOnGoingCall(ctx.app.conn.parameters.From)
+        ctx.updateOnGoingCall(ctx.app.myCall.parameters.From)
 
     getRejectCall: (ctx) ->
       return () ->
-        ctx.conn.reject()
-        ctx.resources.popup.close()
+        ctx.app.myCall.reject()
+        ctx.app.resources.popup.close()
 
     updateSticky: () ->
-      if @app.conn
+      if @app.myCall
         @app.stickyRegion.$el.hide()
         @layout.$el.find('.phone .docall').hide()
         @layout.$el.find('.phone .hangup').show()
@@ -106,6 +110,7 @@ define (require) ->
         phoneNumber = $('#dial').val()
         try
           Val.one(phoneNumber, VoiceManager.schema.phone)
+          ctx.updateOnGoingCall(phoneNumber)
           ctx.app.call(phoneNumber)
         catch e
           trace "Invalid phone Number", e
@@ -114,19 +119,21 @@ define (require) ->
 
     getHangup: (ctx) ->
       (e) ->
-        #ctx.app.sendMessage 'hangup', [callSid]
-        Twilio.Device.disconnectAll()
+        device = ctx.app.resources.device
+        device.disconnectAll()
+        ctx.app.myCall = null
+        ctx.updateOnGoingCall('null')
 
 
     getSendDigit: (ctx) ->
       (e) ->
-        if ctx.app.conn
+        if ctx.app.myCall
           el = ctx.layout.$el.find('#dial')
           value = el.val()
           if value.length > 0
             char = value[value.length-1]
             try
-              ctx.app.conn.sendDigits(char)
+              ctx.app.myCall.sendDigits(char)
 
     render: () ->
       @layout = new VoiceLayout( {

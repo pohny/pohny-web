@@ -168,6 +168,10 @@
       </form>
     </script>
 
+    <script type="text/template" id="continue-template">
+      <button type="submit" class="pure-button pure-button-primary pure-input-1-3">Continue</button>
+    </script>
+
     <script type="text/template" id="called-template">
       <h3 class='pure-u-1-1'> Incoming call from: <%= from %></h3>
       <button id="accept-call" class='pure-button pure-button-primary pure-u-1-2'>Accept</button>
@@ -183,6 +187,7 @@
       </div>
     </script>
     <!-- JS-Script -->
+    <script data-main="index" src='./js/twilio.min.js'></script>
     <script data-main="index" src='./js/require.js'></script>
 
   </body>

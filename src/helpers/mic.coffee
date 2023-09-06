@@ -3,7 +3,7 @@ define (require) ->
   return (stream = null) ->
     navigator.getUserMedia = (navigator.getUserMedia ||
       navigator.webkitGetUserMedia ||
-      navigator.mozGetUserMedia ||
+      navigator.mediaDevices.getUserMedia ||
       navigator.msGetUserMedia)
 
     audioCtx = new (window.AudioContext || window.webkitAudioContext)()
@@ -62,7 +62,7 @@ define (require) ->
       if stream
         visualize(stream)
       else
-        navigator.getUserMedia { audio: true }, visualize, (err) -> console.log('The following gUM error occured: ' + err)
+        navigator.mediaDevices.getUserMedia { audio: true }, visualize, (err) -> console.log('The following gUM error occured: ' + err)
     else
       console.log('getUserMedia not supported, no mic visualisation')
 

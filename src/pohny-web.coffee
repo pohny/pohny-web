@@ -19,6 +19,7 @@ define (require) ->
 
   class App
 
+    myCall = null
     @mainRegion: new Marionette.Region({ el: '#content'})
     @oldRegion: new Marionette.Region({ el: '#content-old'})
     @stickyRegion: new Marionette.Region({ el: '#sticky'})
@@ -31,9 +32,10 @@ define (require) ->
       App.websocket.send( JSON.stringify({"jsonrpc": "2.0", "method": method, "params": params }) )
     @call: (phoneNumber) ->
       #ctx.app.sendMessage 'call', [phoneNumber]
-      Twilio.Device.connect({
-        PhoneNumber: phoneNumber
-      })
+      device = new Twilio.Device(@dataSource.user.capabilityToken)
+      trace 'calling: ' + phoneNumber
+      @myCall = await device.connect({ params: { To: phoneNumber } })
+      console.log @myCall
 
     @show: (layout, cb) ->
       # TODO: Uncomment code below for fancy slide in effects
@@ -132,6 +134,8 @@ define (require) ->
         #user: new Backbone.Model(user)
         user: userData
       }
+      resources.device = new Twilio.Device(@dataSource.user.capabilityToken)
+      document.device = resources.device
 
       App.dataSource.conversations.on 'all', (method, model) ->
         if ['add', 'change', 'remove'].indexOf(method) > -1
@@ -195,9 +199,8 @@ define (require) ->
           ), 1000
 
 
+      #TODO: set interval to fetch capability token
       trace 'app starting ...'
-      #trace userData.capabilityToken
-      #resources.initializePhone(userData.capabilityToken, App)
       Backbone.history.start()
       resources.createMenus(resources.menus, Backbone.history.fragment)
       App.incrConversation()
@@ -274,5 +277,12 @@ define (require) ->
         })
 
 
-    Authenticator.auth()
+    accessToken = window.sessionStorage.getItem('access_token')
+    if accessToken
+      $('#content').html($('#continue-template').html())
+      btn = $('#content button')
+      btn.on 'click', () ->
+        Authenticator.auth()
+    else
+      Authenticator.refresh()
   return App

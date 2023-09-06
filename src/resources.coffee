@@ -1,8 +1,8 @@
 define (require) ->
   Backbone = require 'backbone.marionette'
-  Twilio = require 'twilio'
   resources = {}
 
+  window.Twilio = Twilio
   window.NODE_ENV = 'dev'
   window.trace = resources.trace = () ->
     if window.NODE_ENV == 'dev'
@@ -49,27 +49,11 @@ define (require) ->
     #$('#content').html out.join("\n")
 
 
-
-  #resources.twilio = { initalized: false}
-  resources.initializePhone = () ->
-    $.ajax('/token').done (token) ->
-      Twilio.Device.setup(token)
-      trace 'phone enabled'
-    Twilio.Device.connect (conn) ->
-      window.conn = conn
-      window.stream = conn.mediaStream.stream
-      trace 'calling'
-      #conn.sendDigits("0")
-    Twilio.Device.incoming (conn) ->
-      conn.accept()
-      window.stream = conn.mediaStream.stream
-      trace 'call coming in!'
-
   resources.getWebsocketUri = (accessToken) ->
-    protocol = 'ws'
+    protocol = 'wss'
     domain = window.location.hostname
     port = window.location.port
-    protocol + '://' + domain + ':' + port + '/?token=' + accessToken
+    protocol + '://' + domain + ':' + port + '/ws/?token=' + accessToken
 
 
   return resources
